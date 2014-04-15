@@ -2,6 +2,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <cstring>
 #include <cmath>
 
 #ifdef _WIN32
@@ -20,6 +21,16 @@
 
 #include <time.h>
 #include <math.h>
+//#undef Success
+#ifdef  _WIN32
+#include "Eigen/Eigen/Core"
+#include "Eigen/Eigen/Dense"
+#else
+#undef Success
+#include <Eigen/Core>
+#include <Eigen/Dense>
+#endif //  _WIN32
+
 
 #ifdef _WIN32
 static DWORD lastTime;
@@ -30,6 +41,7 @@ static struct timeval lastTime;
 #define PI 3.14159265
 
 using namespace std;
+using namespace Eigen;
 
 //****************************************************
 // Some Classes
@@ -173,12 +185,105 @@ void myFrameMove() {
 }
 
 
+
+
+class CPatch{
+public:
+  CPatch(){}
+
+  CPatch(ifstream fin){
+    for(int i=0; i< 4; i++){
+
+      std::vector<string> splitline;
+      string line, buf;
+      getline(fin, line);
+      stringstream ss(line);
+
+      while (ss >> buf){
+        splitline.push_back(buf);
+      }
+
+      if(splitline.size()==0){
+        i--;
+        continue;
+      }
+
+      for(int j=0; j < 4; j++){
+        m_point[j][i] = Vector3f(
+            atof(splitline[0+j*3].c_str()), 
+            atof(splitline[1+j*3].c_str()), 
+            atof(splitline[2 + j*3].c_str()));
+      }
+    }
+  }
+public:
+  bool assign(int idx, int idy, Vector3f point){
+    m_point[idx][idy] = point;
+  }
+
+  void print(){
+    for (int i = 0; i < 4; i++){
+      cout << m_point[0][i] << m_point[1][i] <<m_point[2][i]<<endl;
+    }
+    
+  }
+
+public:
+  // Mat4f P;
+  Vector3f m_point[4][4];  
+};
+
+int num_patch;
+
+CPatch*  parseBez(string file){
+    printf("parse scene %s\n", file.c_str());
+    CPatch * patches;
+
+    ifstream fin(file.c_str());
+
+    if(!fin.is_open()){
+      cout <<"open file"<<file<<" failed"<<endl;
+      exit(-1);
+    }
+    else{
+      while(fin.good()){
+        std::vector<string> splitline;
+        string line, buf;
+
+        getline(fin, line);
+
+        while(line==""){
+          getline(fin, line);
+        }
+
+        num_patch = atoi(line.c_str());
+
+        patches = (CPatch *)malloc(num_patch * sizeof(CPatch));
+
+        for(int i = 0; i < num_patch; i++){
+          patches[i] = CPatch(fin);
+        }
+
+      }
+      fin.close();
+    }
+    return patches;
+  }
+
+
+
 //****************************************************
 // the usual stuff, nothing exciting here
 //****************************************************
 int main(int argc, char *argv[]) {
   //This initializes glut
   glutInit(&argc, argv);
+
+  CPatch * patches = parseBez("test.bez");
+
+  patches[0].print();
+
+
 
   //This tells glut to use a double-buffered window with red, green, and blue channels 
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
