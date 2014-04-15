@@ -38,13 +38,20 @@ static DWORD lastTime;
 static struct timeval lastTime;
 #endif
 
-#define PI 3.14159265
+#define DELETE_OBJECT(x)	if ((x)) { delete (x); (x) = NULL; }   // delete a class object
+#define DELETE_ARRAY(x)		if ((x)) { delete [] (x); (x) = NULL; } // delete an array
+#define FOR(i,n) for( int i=0; i<n; i++ )                           // for loop 
+#define FOR_u(i, n) for (size_t i = 0; i < n; i++)                  // for loop 
+#define SQUARE(x) ((x)*(x))
+#define INF 1e10f
+#define PI 3.1415926f
+inline float sqr(float x) { return x*x; }
+typedef unsigned char uchar; 
+#define PRINT
 
 using namespace std;
 using namespace Eigen;
-
-int num_patch;
-
+ 
 //////////////////////////////////////////////////////////////////
 //CPatch
 //////////////////////////////////////////////////////////////////
@@ -60,36 +67,31 @@ public:
   }
 
   void print(){
-    for (int i = 0; i < 4; i++){
-
-      for (int j=0; j < 4; j++){
-        cout << m_point[j][i](0) <<",\t"<< m_point[j][i](1)<< ",\t"<< m_point[j][i](2) << ";\t";
+		FOR (i, 4) { 
+			FOR (j, 4)
+				printf("(%f, %f, %f) ", m_point[i][j](0), m_point[i][j](1), m_point[i][j](2)); // << ";\t";
+			cout << endl;
       } 
-      cout << endl<<endl;
-    }
-    
   }
 
 public:
-  // Mat4f P;
   Vector3f m_point[4][4];  
 };
 
-
+vector<CPatch> g_patches; 
 
 //////////////////////////////////////////////////////////////////
 //parseBez function
 //////////////////////////////////////////////////////////////////
 
 
-CPatch*  parseBez(string file){
-    printf("parse scene %s\n", file.c_str());
-    CPatch * patches;
+vector<CPatch> parseBez(string file){
+    vector<CPatch> patches;
 
     ifstream fin(file.c_str());
 
     if(!fin.is_open()){
-      cout <<"open file"<<file<<" failed"<<endl;
+	  printf("failed to open file (%s)\n", file.c_str()); 
       exit(-1);
     }
     else{
@@ -97,21 +99,16 @@ CPatch*  parseBez(string file){
       string line, buf;
 
       getline(fin, line);
-      num_patch = atoi(line.c_str());
-      // cout << line <<endl;
-      patches = (CPatch *)malloc(num_patch * sizeof(CPatch));
-      
-      // while(fin.good()){
+      int num_patch = atoi(line.c_str());
+	  printf("read (%d) patches from (%s)\n", num_patch, file.c_str());
+	  patches.resize(num_patch);
 
         for(int k = 0; k < num_patch; k++){
-
-          patches[k] = CPatch();
-
+          //patches[k] = CPatch();
+		  CPatch patch; 
           for(int i=0; i< 4; i++){
-
             getline(fin, line);
             stringstream ss(line);
-
             // cout << k << "\t" << line << endl;
 
             while (ss >> buf){
@@ -119,21 +116,18 @@ CPatch*  parseBez(string file){
             }
 
             for(int j=0; j < 4; j++){
-                patches[k].assign(j, i,  Vector3f(
+                patch.assign(i, j,  Vector3f(
                   atof(splitline[0+j*3].c_str()), 
                   atof(splitline[1+j*3].c_str()), 
-                  atof(splitline[2 + j*3].c_str())) );
+                  atof(splitline[2+j*3].c_str())) );
             }
 
             splitline.clear();
           }
            getline(fin, line);
-          // patches[k] = CPatch(fin);
-
-
+		   patches[k] = patch; 
         }
 
-      // }
       fin.close();
     }
     return patches;
@@ -152,7 +146,7 @@ class Viewport {
 //****************************************************
 // Global Variables
 //****************************************************
-Viewport    viewport;
+Viewport viewport;
 
 //****************************************************
 // reshape viewport if the window is resized
@@ -192,38 +186,6 @@ void initScene(){
 // function that does the actual drawing
 //***************************************************
 void myDisplay() {
-
-
-  //----------------------- ----------------------- -----------------------
-  // This is a quick hack to add a little bit of animation.
-  static float tip = 0.0f;
-  const  float stp = 0.05f;
-  static  float R = 0.0f;
-  static  float G = 0.0f;
-  static  float B = 0.0f;
-  const  float c_beg = 1.0f;
-  const  float c_stp = 0.003f;
-  const  float beg = 0.0f;
-  const  float end = float(2*PI);
-  const float c_end = 0.0f;
-  const float DEG2RAD=PI/180;
-  tip += stp;
-  if (tip>end) tip = beg;
-if ( R > c_end) {
-	R-=c_stp;
-}
-else if ( B > c_end) {
-	B-=c_stp;
-}
-else if ( G > c_end) {
-	G-=c_stp;
-}
-else {
-	R= c_beg, G = c_beg, B = c_beg;
-} 
-  //----------------------- ----------------------- -----------------------
-
-
   glClear(GL_COLOR_BUFFER_BIT);                // clear the color buffer (sets everything to black)
 
   glMatrixMode(GL_MODELVIEW);                  // indicate we are specifying camera transformations
@@ -233,23 +195,23 @@ else {
   // Rectangle Code
   //glColor3f(red component, green component, blue component);
 
-  glColor3f(R,G,B);                   // setting the color to pure red 90% for the rect
+  //glColor3f(R,G,B);                   // setting the color to pure red 90% for the rect
 
-  CPatch * patches = parseBez("teapot.bez");
+  //CPatch * patches = parseBez("teapot.bez");
 
   glBegin(GL_LINE_STRIP);
 
 
-for (int k=0; k < num_patch ; k++)
-   {
-    for(int i=0; i < 4; i++){
-      for(int j =0; j< 4; j++){
-          glVertex3f(patches[k].m_point[j][i](0),
-              patches[k].m_point[j][i](1), 
-              patches[k].m_point[j][i](2));
-      }
-    }
-   }
+//for (int k=0; k < num_patch ; k++)
+//   {
+//    for(int i=0; i < 4; i++){
+//      for(int j =0; j< 4; j++){
+//          glVertex3f(patches[k].m_point[j][i](0),
+//              patches[k].m_point[j][i](1), 
+//              patches[k].m_point[j][i](2));
+//      }
+//    }
+//   }
   glEnd();
 
   glFlush();
@@ -271,33 +233,27 @@ void myFrameMove() {
 
 
 
-
-
-
 //****************************************************
 // the usual stuff, nothing exciting here
 //****************************************************
 int main(int argc, char *argv[]) {
   //This initializes glut
   glutInit(&argc, argv);
-
-  // CPatch * patches = parseBez("teapot.bez");
-  // CPatch * patches = parseBez("test.bez");
-  // patches[0].print();
+  g_patches = parseBez("test.bez");
 
 
 
   //This tells glut to use a double-buffered window with red, green, and blue channels 
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
 
-  // Initalize theviewport size
+  // Initialize the viewport size
   viewport.w = 400;
   viewport.h = 400;
 
   //The size and position of the window
   glutInitWindowSize(viewport.w, viewport.h);
   glutInitWindowPosition(0, 0);
-  glutCreateWindow("CS184! cs184-at Nan Tian");
+  glutCreateWindow("Tesselation");
 
   initScene();                                 // quick function to set up scene
 
@@ -305,7 +261,8 @@ int main(int argc, char *argv[]) {
   glutReshapeFunc(myReshape);                  // function to run when the window gets resized
   // glutIdleFunc(myFrameMove);                   // function to run when not handling any other task
   glutMainLoop();                              // infinite loop that will keep drawing and resizing and whatever else
-
+  
+  g_patches.clear(); 
   return 0;
 }
 
