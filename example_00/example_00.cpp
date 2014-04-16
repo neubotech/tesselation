@@ -118,11 +118,11 @@ public:
 	V3f m_n; 
 };
 
-typedef vector<vector<CLocalGeo>> PatchMesh; 
+typedef vector<vector<CLocalGeo> > PatchMesh; 
 
 class CBezier {
 public: 
-	void UniformTessellate(const CPatch& _patch, float _step, vector<vector<CLocalGeo>>& _geos) {
+	void UniformTessellate(const CPatch& _patch, float _step, vector<vector<CLocalGeo> >& _geos) {
 		int numdiv = (1+EPS)/_step+1; 
 		_geos.clear(); 
 		_geos.resize(numdiv);
@@ -458,18 +458,19 @@ void myFrameMove() {
 }
 
 
-void ProcessGeometry(const vector<CPatch>& _patches) {
+void ProcessGeometry(const vector<CPatch>& _patches, const float parameter) {
 	CBezier* bezier = new CBezier(); 
 	
 	FOR (k, (int)_patches.size()) {
 		PatchMesh mesh; 
-		bezier->UniformTessellate(_patches[k], 0.1f, mesh);
+		bezier->UniformTessellate(_patches[k], parameter, mesh);
 		g_meshes.push_back(mesh);
 	}
 
 	DELETE_OBJECT(bezier);
 }
 
+enum Ttype { uniform, adaptive};
 
 //****************************************************
 // the usual stuff, nothing exciting here
@@ -477,8 +478,42 @@ void ProcessGeometry(const vector<CPatch>& _patches) {
 int main(int argc, char *argv[]) {
   //This initializes glut
   glutInit(&argc, argv);
-  g_patches = parseBez("teapot.bez");
- ProcessGeometry(g_patches);
+
+  float parameter = 0.1f;
+  Ttype type = uniform;
+  string filename = "teapot.bez";
+
+  if (argc > 1){
+  	filename = argv[1];
+  	cout << "opening:\t" << argv[1] << endl;
+  }
+  if (argc > 2){
+  	parameter = atof(argv[2]);
+
+  	cout << "parameter:\t"<<parameter << endl;
+  }
+
+  if (argc > 3){
+  	if (strcmp(argv[3], "-a") == 0){
+  		type = adaptive;
+  		cout<< "type:\tAdaptive Triangulation"<<endl;
+  	}
+  	else{
+  		cout<< "type:\tUniform Tessellation"<<endl;
+  	}
+  }
+
+  
+
+
+  g_patches = parseBez(filename);
+
+  switch ( type ){
+  	case uniform:
+ 		ProcessGeometry(g_patches, parameter);
+ 	case adaptive:
+ 		cout<< "Adaptive Triangulation"<<endl;
+ 	}
 
   //This tells glut to use a double-buffered window with red, green, and blue channels 
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
