@@ -25,6 +25,7 @@
 #ifdef  _WIN32
 #include "Eigen/Eigen/Core"
 #include "Eigen/Eigen/Dense"
+#include "Eigen/Geometry"
 #else
 #undef Success
 #include <Eigen/Core>
@@ -59,6 +60,8 @@ typedef Vector3f V3f;
 
 enum Ttype { uniform, adaptive};
 Ttype type = uniform;
+
+int n_triangle=0;
  
 //////////////////////////////////////////////////////////////////
 //CPatch
@@ -74,7 +77,7 @@ public:
     return true;
   }
 
-  void print(){
+  void print() const{
 		FOR (i, 4) { 
 			FOR (j, 4)
 				printf("(%f, %f, %f) ", m_point[i][j](0), m_point[i][j](1), m_point[i][j](2)); // << ";\t";
@@ -120,50 +123,50 @@ class CLocalGeo {
 public:
 	CLocalGeo(){};
 
-	CLocalGeo(V3f _P){
-		m_P = _P;
-		m_n = Vector3f(0,0,0);
-		m_uv = Vector2f(-1,-1);
-	}
-
 	CLocalGeo(const CPatch& _patch, V3f _P){
 		m_P = _P;
 
-		V3f U = _patch.m_point[3][0] - _patch.m_point[0][0];
-		V3f V = _patch.m_point[0][3] - _patch.m_point[0][0];
-		V3f D = _patch.m_point[3][3] - _patch.m_point[0][0];
+		V3f U = _patch.m_point[0][3] - _patch.m_point[0][0];
+		V3f V = _patch.m_point[3][0] - _patch.m_point[0][0];
+		// V3f D = _patch.m_point[3][3] - _patch.m_point[0][0];
 		V3f P = m_P - _patch.m_point[0][0];
 
-		m_uv(0) = P.dot(U)/U.norm();
-		m_uv(1) = P.dot(V)/V.norm();
+		m_uv = Vector2f( P.dot(U)/U.norm(), P.dot(V)/V.norm());
 
 		// cout <<  "U: " << U << endl;
 		// cout << "V: " << V << endl;
 		// cout <<  "P: " << P << endl;
 		// cout << "m_uv: " << m_uv << endl;
+		// cout<< m_P << endl << endl;
+
+	/*	if (P[0]!= P[0] ){
+			cout << n_triangle<<endl;
+			exit(-1); 
+		}*/
+
 		
 		m_n = Vector3f(0, 0, 0);
 		
 	}
 public:
 	void print(){
-		printf("position:\t%d\t%d\t%d\n", m_P.x(), m_P.y(), m_P.z());
-		printf("Normal:\t%d\t%d\t%d\n", m_n.x(), m_n.y(), m_n.z());
-		printf("u, v :\t%d\t%d\n", m_uv(0), m_uv(1));
+		printf("pos:\t%f\t%f\t%f\n", m_P(0), m_P(1), m_P(2));
+		printf("Normal:\t%f\t%f\t%f\n", m_n.x(), m_n.y(), m_n.z());
+		printf("u, v :\t%f\t%f\n", m_uv(0), m_uv(1));
 	}
 
-	void updateUV(const CPatch _patch){
+	// void updateUV(const CPatch _patch){
 
-		V3f U = _patch.m_point[3][0] - _patch.m_point[0][0];
-		V3f V = _patch.m_point[0][3] - _patch.m_point[0][0];
-		V3f P = m_P - _patch.m_point[0][0];
+	// 	V3f U = _patch.m_point[3][0] - _patch.m_point[0][0];
+	// 	V3f V = _patch.m_point[0][3] - _patch.m_point[0][0];
+	// 	V3f P = m_P - _patch.m_point[0][0];
 
-		m_uv(0) = P.dot(U)/U.norm();
-		m_uv(1) = P.dot(V)/V.norm();
+	// 	m_uv(0) = P.dot(U)/U.norm();
+	// 	m_uv(1) = P.dot(V)/V.norm();
 
 		
-		m_n = Vector3f(0, 0, 0);
-	}
+	// 	m_n = Vector3f(0, 0, 0);
+	// }
 
 public: 
 	V3f m_P; 
@@ -172,25 +175,35 @@ public:
 
 };
 
+
 /////////////////////////////////////////////////////////////////////////////////
 //adaptive code
 /////////////////////////////////////////////////////////////////////
 class CTriangle{
 public:
+	CTriangle(){};
+
  	CTriangle(const CPatch& _patch, V3f _v1, V3f _v2, V3f _v3 ):
  	m_v1(_patch, _v1), m_v2(_patch, _v2), m_v3(_patch, _v3)
  	{
- 		// m_patch = _patch;
+ 		m_patch = &_patch;
+
+ 		n_triangle++;
+
+ 		cout<<"triangle#: "<< n_triangle << endl;
+ 		m_v1.print();
+ 		m_v2.print();
+ 		m_v3.print();
  	}
 
 public:
 	CLocalGeo m_v1, m_v2, m_v3;
-	CPatch m_patch;
+	const CPatch *m_patch;
 };
 
 typedef vector<vector<CLocalGeo> > PatchMesh; 
 
-typedef vector<CLocalGeo> PatchVertex;
+typedef vector<CTriangle> PatchTriangle;
 
 class CBezier {
 public: 
@@ -221,10 +234,10 @@ public:
 	///////////////////////////////////////////////////////////
 	//adaptive code
 	///////////////////////////////////////////////////////
-	void AdaptiveTriangulation(const CPatch& _patch, float _error, vector<CLocalGeo> & _geos){
+	void AdaptiveTriangulation(const CPatch& _patch, float _error, vector<CTriangle> & _geos){
 		//initialize 4 points of the patch
 		_geos.clear(); 
-		_geos.resize(N);
+		// _geos.resize(N);
 
 		// CLocalGeo v[2][2];
 		// for (int i = 0; i < 2; i++){
@@ -258,7 +271,7 @@ public:
 	}
 
 private: 
-	bool subdivide( const CPatch& _patch, CTriangle t, float _error, vector<CLocalGeo> & _geos){
+	bool subdivide( const CPatch& _patch, CTriangle t, float _error, vector<CTriangle> & _geos){
 		CLocalGeo v12(_patch, (t.m_v1.m_P + t.m_v2.m_P)/2.0f);
 		CLocalGeo v23(_patch, (t.m_v2.m_P + t.m_v3.m_P)/2.0f);
 		CLocalGeo v31(_patch, (t.m_v3.m_P + t.m_v1.m_P)/2.0f);
@@ -267,11 +280,10 @@ private:
 		bool e31=edge_test(_patch, t.m_v3, t.m_v1, v31, _error);
 
 		cout<< e12 << e23 << e31 << endl;
+		// _patch.print();
 
 		if(e12 & e23 & e31){
-			_geos.push_back(t.m_v1);
-			_geos.push_back(t.m_v2);
-			_geos.push_back(t.m_v3);
+			_geos.push_back(t);
 
 			t.m_v1.print();
 			t.m_v2.print();
@@ -346,7 +358,7 @@ private:
 		float error=(_v12.m_P - mid_point.m_P).norm();
 		// _v12.print();
 		// mid_point.print();
-		// cout << error << endl;
+		// cout << error << endl << endl;
 		return error < _error;
 	}
 
@@ -398,7 +410,7 @@ private:
 vector<CPatch> g_patches; 
 vector<PatchMesh> g_meshes; 
 
-vector<PatchVertex> g_triangles;
+vector<PatchTriangle> g_triangle_meshes;
 
 
 
@@ -661,14 +673,28 @@ void myDisplay() {
 			}
 		case adaptive:
 			// cout<< type <<endl;
-			for(int k =0; k < g_triangles.size(); k++){
+			for(int k =0; k < g_triangle_meshes.size(); k++){
 				// cout<<k << endl;
-				PatchVertex vertexes = g_triangles[k];
-				for (int s = 0; s < vertexes.size(); s++){
-					V3f P = vertexes[s].m_P;
-					V3f n = vertexes[s].m_n;
+				PatchTriangle Triangles = g_triangle_meshes[k];
+				for (int s = 0; s < Triangles.size(); s++){
+					glBegin(GL_TRIANGLES);
+					V3f P, n;
+
+					P = Triangles[s].m_v1.m_P;
+					n = Triangles[s].m_v1.m_n;
 					glNormal3f(n.x(), n.y(), n.z());
 					glVertex3f(P.x(),P.y(),P.z());
+
+					P = Triangles[s].m_v2.m_P;
+					n = Triangles[s].m_v2.m_n;
+					glNormal3f(n.x(), n.y(), n.z());
+					glVertex3f(P.x(),P.y(),P.z());
+
+					P = Triangles[s].m_v3.m_P;
+					n = Triangles[s].m_v3.m_n;
+					glNormal3f(n.x(), n.y(), n.z());
+					glVertex3f(P.x(),P.y(),P.z());
+					glEnd();
 				}
 			}
 
@@ -707,12 +733,12 @@ void ProcessGeometry(const vector<CPatch>& _patches, Ttype type, const float par
 		case adaptive:
 			FOR (k, (int)_patches.size()) {
 				// cout<<k<<endl;
-				PatchVertex vertexes; 
-				bezier->AdaptiveTriangulation(_patches[k], parameter, vertexes);
+				PatchTriangle T; 
+				bezier->AdaptiveTriangulation(_patches[k], parameter, T);
 				// cout << vertexes.size()<<endl;
 				// vertexes[0].print();
-				if (g_triangles.size()<= N){
-					g_triangles.push_back(vertexes);
+				if (true){
+					g_triangle_meshes.push_back(T);
 				}
 				else{
 					cout<<"reach maximum triangles per patch for patch "<< k <<endl;
