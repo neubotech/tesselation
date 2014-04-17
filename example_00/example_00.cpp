@@ -54,7 +54,8 @@ typedef unsigned char uchar;
 typedef Vector3f V3f; 
 #define PRINT
 
-
+enum Ttype { uniform, adaptive};
+Ttype type = uniform;
  
 //////////////////////////////////////////////////////////////////
 //CPatch
@@ -113,12 +114,64 @@ private:
 };
 
 class CLocalGeo {
+public:
+	CLocalGeo(){};
+
+	CLocalGeo(V3f _P){
+		m_P = _P;
+		m_n = Vector3f(0,0,0);
+		m_uv = Vector2f(-1,-1);
+	}
+
+	CLocalGeo(const CPatch& _patch, V3f _P){
+		m_P = _P;
+
+		V3f U = _patch.m_point[3][0] - _patch.m_point[0][0];
+		V3f V = _patch.m_point[0][3] - _patch.m_point[0][0];
+		V3f P = m_P - _patch.m_point[0][0];
+
+		U = U/U.norm();
+		V = V/V.norm();
+		P = P/P.norm();
+
+		m_uv(0) = P.dot(U);
+		m_uv(1) = P.dot(V);
+		
+		m_n = Vector3f(0, 0, 0);
+	}
+public:
+	void print(){
+		printf("position:\t%d\t%d\t%d\n", m_P.x(), m_P.y(), m_P.z());
+		printf("Normal:\t%d\t%d\t%d\n", m_n.x(), m_n.y(), m_n.z());
+		printf("u, v :\t%d\t%d\n", m_uv(0), m_uv(1));
+	}
+
 public: 
 	V3f m_P; 
 	V3f m_n; 
+	Vector2f m_uv;
+
+
+};
+
+/////////////////////////////////////////////////////////////////////////////////
+//adaptive code
+/////////////////////////////////////////////////////////////////////
+class CTriangle{
+ 	CTriangle( CPatch* _patch, V3f _v1, V3f _v2, V3f _v3 ):
+ 	m_v1(*_patch, _v1), m_v2(*_patch, _v2), m_v3(*_patch, _v3)
+ 	{
+ 		m_patch = _patch;
+ 	}
+
+public:
+	CLocalGeo m_v1, m_v2, m_v3;
+	CPatch* m_patch;
 };
 
 typedef vector<vector<CLocalGeo> > PatchMesh; 
+
+typedef vector<CLocalGeo> PatchVertex;
 
 class CBezier {
 public: 
@@ -139,9 +192,36 @@ public:
 				CLocalGeo geo; 
 				BezPatchInterp(_patch, u, v, geo); 
 				_geos[iu][iv] = geo; 
+
+				// if(iv==0 || iv ==1){
+				// 	geo.print();
+				// }
 			}
 		}
 	}
+	///////////////////////////////////////////////////////////
+	//adaptive code
+	///////////////////////////////////////////////////////
+	void AdaptiveTriangulation(const CPatch& _patch, float _error, vector<CLocalGeo> & _geos){
+		//initialize
+		CLocalGeo v[2][2];
+
+		for (int i = 0; i < 2; i++){
+			for (int j=0; j< 2; j++){
+
+				BezPatchInterp(_patch, i, j, v[i][j]);
+				// v[i][j].print();
+				// cout << i << j <<endl;
+				// v[i][j].m_uv = Vector2f(i, j);
+				_geos.push_back(v[i][j]);
+				
+			}
+		}
+
+
+	}
+
+	////////////////////////////////////////////////////////
 
 private: 
 	void BezCurveInterp(const CCurve& _curve, float _u, CLocalGeo& _geo) {
@@ -187,6 +267,11 @@ private:
 
 vector<CPatch> g_patches; 
 vector<PatchMesh> g_meshes; 
+
+vector<PatchVertex> g_triangles;
+
+
+
 //////////////////////////////////////////////////////////////////
 //parseBez function
 //////////////////////////////////////////////////////////////////
@@ -418,31 +503,51 @@ void myDisplay() {
 	else
 		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 
+
+
 	int dx[] = {0, 0, 1, 1};
 	int dy[] = {0, 1, 1, 0};
 	glColor3f(0.0f, 0.0f, 1.0f);
 
-	FOR_u (k, g_meshes.size()) {
-		PatchMesh mesh = g_meshes[k];
-		FOR (i, mesh.size()-1) {
-			FOR (j, mesh[i].size()-1) {
-				glBegin(GL_QUADS);
-				FOR (l, 4) {
-					int w = i + dx[l];
-					int h = j + dy[l];
-					V3f P = mesh[w][h].m_P;
-					V3f n = mesh[w][h].m_n;
+	switch (type){
+		case uniform:
+			FOR_u (k, g_meshes.size()) {
+				PatchMesh mesh = g_meshes[k];
+				FOR (i, mesh.size()-1) {
+					FOR (j, mesh[i].size()-1) {
+						glBegin(GL_QUADS);
+						FOR (l, 4) {
+							int w = i + dx[l];
+							int h = j + dy[l];
+							V3f P = mesh[w][h].m_P;
+							V3f n = mesh[w][h].m_n;
+							glNormal3f(n.x(), n.y(), n.z());
+							glVertex3f(P.x(),P.y(),P.z());
+						}
+
+						glEnd();	
+					}
+				}
+			}
+		case adaptive:
+			// cout<< type <<endl;
+			for(int k =0; k < g_triangles.size(); k++){
+				// cout<<k << endl;
+				PatchVertex vertexes = g_triangles[k];
+				for (int s = 0; s < vertexes.size(); s++){
+					V3f P = vertexes[s].m_P;
+					V3f n = vertexes[s].m_n;
 					glNormal3f(n.x(), n.y(), n.z());
 					glVertex3f(P.x(),P.y(),P.z());
 				}
-
-				glEnd();	
 			}
-		}
-	}
 
-	glPopMatrix();		
-	glutSwapBuffers();                           // swap buffers (we earlier set double buffer)
+		}
+
+		glPopMatrix();		
+		glutSwapBuffers();
+	                           // swap buffers (we earlier set double buffer)
+	
 }
 
 
@@ -458,19 +563,32 @@ void myFrameMove() {
 }
 
 
-void ProcessGeometry(const vector<CPatch>& _patches, const float parameter) {
+
+void ProcessGeometry(const vector<CPatch>& _patches, Ttype type, const float parameter) {
 	CBezier* bezier = new CBezier(); 
 	
-	FOR (k, (int)_patches.size()) {
-		PatchMesh mesh; 
-		bezier->UniformTessellate(_patches[k], parameter, mesh);
-		g_meshes.push_back(mesh);
+	switch (type) {
+		case uniform:
+			FOR (k, (int)_patches.size()) {
+				PatchMesh mesh; 
+				bezier->UniformTessellate(_patches[k], parameter, mesh);
+				g_meshes.push_back(mesh);
+			}
+		case adaptive:
+			FOR (k, (int)_patches.size()) {
+				cout<<k<<endl;
+				PatchVertex vertexes; 
+				bezier->AdaptiveTriangulation(_patches[k], parameter, vertexes);
+				cout << vertexes.size()<<endl;
+				vertexes[0].print();
+				g_triangles.push_back(vertexes);
+			}
 	}
 
 	DELETE_OBJECT(bezier);
 }
 
-enum Ttype { uniform, adaptive};
+
 
 //****************************************************
 // the usual stuff, nothing exciting here
@@ -480,7 +598,6 @@ int main(int argc, char *argv[]) {
   glutInit(&argc, argv);
 
   float parameter = 0.1f;
-  Ttype type = uniform;
   string filename = "teapot.bez";
 
   if (argc > 1){
@@ -508,12 +625,7 @@ int main(int argc, char *argv[]) {
 
   g_patches = parseBez(filename);
 
-  switch ( type ){
-  	case uniform:
- 		ProcessGeometry(g_patches, parameter);
- 	case adaptive:
- 		cout<< "Adaptive Triangulation"<<endl;
- 	}
+  ProcessGeometry(g_patches, type, parameter);
 
   //This tells glut to use a double-buffered window with red, green, and blue channels 
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
