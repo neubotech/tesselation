@@ -146,11 +146,26 @@ public:
 		printf("u, v :\t%d\t%d\n", m_uv(0), m_uv(1));
 	}
 
+	void updateUV(const CPatch _patch){
+
+		V3f U = _patch.m_point[3][0] - _patch.m_point[0][0];
+		V3f V = _patch.m_point[0][3] - _patch.m_point[0][0];
+		V3f P = m_P - _patch.m_point[0][0];
+
+		U = U/U.norm();
+		V = V/V.norm();
+		P = P/P.norm();
+
+		m_uv(0) = P.dot(U);
+		m_uv(1) = P.dot(V);
+		
+		m_n = Vector3f(0, 0, 0);
+	}
+
 public: 
 	V3f m_P; 
 	V3f m_n; 
-	Vector2f m_uv;
-
+	Vector2f m_uv; 
 
 };
 
@@ -203,23 +218,42 @@ public:
 	//adaptive code
 	///////////////////////////////////////////////////////
 	void AdaptiveTriangulation(const CPatch& _patch, float _error, vector<CLocalGeo> & _geos){
-		//initialize
+		//initialize 4 points of the patch
 		CLocalGeo v[2][2];
-
 		for (int i = 0; i < 2; i++){
 			for (int j=0; j< 2; j++){
 
 				BezPatchInterp(_patch, i, j, v[i][j]);
 				// v[i][j].print();
 				// cout << i << j <<endl;
-				// v[i][j].m_uv = Vector2f(i, j);
+				v[i][j].m_uv = Vector2f(i, j);
 				_geos.push_back(v[i][j]);
-				
 			}
 		}
 
+		CTriangle bl( &_patch, v[0][0], v[0][1], v[1][0]);
+		CTriangle tr( &_patch, v[1][1], v[0][1], v[1][0]); //bl = bottom left; tr = top right;
+
+		subdivide(bl);
+		subdivide(tr);
+
 
 	}
+
+private: 
+	virtual bool subdivide(CTriangle t){
+
+	}
+
+	//need to test out
+	bool edge_test(const CPatch _patch, CLocalGeo _v1, CLocalGeo _v2, CLocalGeo & _v12, float _error){
+		CLocalGeo mid_point(_patch, (_v1.m_P + _v2.m_P)/2.0f);
+
+		BezPatchInterp(_patch, mid_point.m_uv(0), mid_point.m_uv(1), _v12);
+
+		return (_v12.m_P - mid_point.m_P).norm() < _error;
+	}
+
 
 	////////////////////////////////////////////////////////
 
@@ -576,11 +610,11 @@ void ProcessGeometry(const vector<CPatch>& _patches, Ttype type, const float par
 			}
 		case adaptive:
 			FOR (k, (int)_patches.size()) {
-				cout<<k<<endl;
+				// cout<<k<<endl;
 				PatchVertex vertexes; 
 				bezier->AdaptiveTriangulation(_patches[k], parameter, vertexes);
-				cout << vertexes.size()<<endl;
-				vertexes[0].print();
+				// cout << vertexes.size()<<endl;
+				// vertexes[0].print();
 				g_triangles.push_back(vertexes);
 			}
 	}
