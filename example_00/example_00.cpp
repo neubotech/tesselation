@@ -255,15 +255,11 @@ private:
 		bool e23=edge_test(_patch, t.m_v2, t.m_v3, v23, _error);
 		bool e31=edge_test(_patch, t.m_v3, t.m_v1, v31, _error);
 
-		// t.m_v1.print();
-		// t.m_v2.print();
-		// v12.print();
-
 		cout<< e12 << e23 << e31 << endl;
 
-			t.m_v1.print();
-			t.m_v2.print();
-			t.m_v3.print();
+			// t.m_v1.print();
+			// t.m_v2.print();
+			// t.m_v3.print();
 		// _patch.print();
 
 		if(e12 & e23 & e31){
@@ -271,25 +267,25 @@ private:
 
 
 		}
-		else if (!e12 & e23 & e31){
+		 if (!e12 & e23 & e31){
 			CTriangle t1(_patch, t.m_v1, v12, t.m_v3);
 			CTriangle t2(_patch, v12, t.m_v2, t.m_v3);
 			subdivide(_patch, t1, _error, _geos);
 			subdivide(_patch, t2, _error, _geos);
 		}
-		else if (e12 & !e23 & e31){
+		 if (e12 & !e23 & e31){
 			CTriangle t1(_patch, t.m_v2, v23, t.m_v1);
 			CTriangle t2(_patch, t.m_v3, t.m_v1, v23);
 			subdivide(_patch, t1, _error, _geos);
 			subdivide(_patch, t2, _error, _geos);
 		}
-		else if (e12 & e23 & !e31){
+		 if (e12 & e23 & !e31){
 			CTriangle t1(_patch, t.m_v1, t.m_v2, v31);
 			CTriangle t2(_patch, t.m_v3, v31, t.m_v2);
 			subdivide(_patch, t1, _error, _geos);
 			subdivide(_patch, t2, _error, _geos);
 		}
-		else if (!e12 & !e23 & e31){
+		 if (!e12 & !e23 & e31){
 			CTriangle t1(_patch, t.m_v1, v12, v23);
 			CTriangle t2(_patch, t.m_v2, v23, v12);
 			CTriangle t3(_patch, t.m_v3, t.m_v1, v23);
@@ -298,7 +294,7 @@ private:
 			subdivide(_patch, t2, _error, _geos);
 			subdivide(_patch, t3, _error, _geos);
 		}
-		else if (e12 & !e23 & !e31){
+		 if (e12 & !e23 & !e31){
 			CTriangle t1(_patch, t.m_v2, v23, v31);
 			CTriangle t2(_patch, t.m_v3, v31, v23);
 			CTriangle t3(_patch, t.m_v1, t.m_v2, v31);
@@ -307,7 +303,7 @@ private:
 			subdivide(_patch, t2, _error, _geos);
 			subdivide(_patch, t3, _error, _geos);
 		}
-		else if (!e12 & e23 & !e31){
+		 if (!e12 & e23 & !e31){
 			CTriangle t1(_patch, t.m_v3, v31, v12);
 			CTriangle t2(_patch, t.m_v1, v12, v31);
 			CTriangle t3(_patch, t.m_v2, t.m_v3, v12);
@@ -316,7 +312,7 @@ private:
 			subdivide(_patch, t2, _error, _geos);
 			subdivide(_patch, t3, _error, _geos);
 		}
-		else if (!e12 & !e23 & !e31){
+		 if (!e12 & !e23 & !e31){
 			CTriangle t1(_patch, t.m_v1, v12, v31);
 			CTriangle t2(_patch, t.m_v2, v23, v12);
 			CTriangle t3(_patch, t.m_v3, v31, v23);
@@ -331,11 +327,9 @@ private:
 
 	//need to test out
 	bool edge_test(const CPatch& _patch, CLocalGeo _v1, CLocalGeo _v2, CLocalGeo & _v12, float _error){
-		CLocalGeo mid_point(_patch, (_v1.m_P+_v2.m_P)/2.0f);
-
 		_v12.m_u = (_v1.m_u + _v2.m_u)/2.0f;
 		_v12.m_v = (_v1.m_v + _v2.m_v)/2.0f;
-
+		CLocalGeo mid_point(_patch, (_v1.m_P+_v2.m_P)/2.0f, _v12.m_u, _v12.m_v);
 
 		// _v1.print();
 		BezPatchInterp(_patch, _v12.m_u, _v12.m_v, _v12);
@@ -344,9 +338,9 @@ private:
 
 
 		float error=(_v12.m_P - mid_point.m_P).norm();
-		// _v12.print();
+		_v12.print();
 		// mid_point.print();
-		// cout << error << endl << endl;
+		cout << error << endl << endl;
 		return error < _error;
 	}
 
