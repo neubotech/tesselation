@@ -50,7 +50,7 @@ using namespace Eigen;
 #define INF 1e10f
 #define EPS 1e-7f
 #define PI 3.1415926f
-#define N 1000  //Number of triangles per half patch
+// #define N 1000  //Number of triangles per half patch
 
 
 inline float sqr(float x) { return x*x; }
@@ -123,55 +123,38 @@ class CLocalGeo {
 public:
 	CLocalGeo(){};
 
+	CLocalGeo(const CPatch& _patch, V3f _P, float _u, float _v){
+		m_P = _P;
+		m_n = Vector3f(0, 0, 0);
+		m_u = _u;
+		m_v = _v;
+
+	}
+
 	CLocalGeo(const CPatch& _patch, V3f _P){
 		m_P = _P;
-
-		V3f U = _patch.m_point[0][3] - _patch.m_point[0][0];
-		V3f V = _patch.m_point[3][0] - _patch.m_point[0][0];
-		// V3f D = _patch.m_point[3][3] - _patch.m_point[0][0];
-		V3f P = m_P - _patch.m_point[0][0];
-
-		m_uv = Vector2f( P.dot(U)/U.norm(), P.dot(V)/V.norm());
-
-		// cout <<  "U: " << U << endl;
-		// cout << "V: " << V << endl;
-		// cout <<  "P: " << P << endl;
-		// cout << "m_uv: " << m_uv << endl;
-		// cout<< m_P << endl << endl;
-
-	/*	if (P[0]!= P[0] ){
-			cout << n_triangle<<endl;
-			exit(-1); 
-		}*/
-
-		
 		m_n = Vector3f(0, 0, 0);
-		
+		m_u = -1;
+		m_v = -1;
+
 	}
 public:
+	void assignUV(float _u, float _v){
+		m_u = _u;
+		m_v = _v;
+	}
+
 	void print(){
 		printf("pos:\t%f\t%f\t%f\n", m_P(0), m_P(1), m_P(2));
 		printf("Normal:\t%f\t%f\t%f\n", m_n.x(), m_n.y(), m_n.z());
-		printf("u, v :\t%f\t%f\n", m_uv(0), m_uv(1));
+		printf("u, v :\t%f\t%f\n", m_u, m_v);
 	}
-
-	// void updateUV(const CPatch _patch){
-
-	// 	V3f U = _patch.m_point[3][0] - _patch.m_point[0][0];
-	// 	V3f V = _patch.m_point[0][3] - _patch.m_point[0][0];
-	// 	V3f P = m_P - _patch.m_point[0][0];
-
-	// 	m_uv(0) = P.dot(U)/U.norm();
-	// 	m_uv(1) = P.dot(V)/V.norm();
-
-		
-	// 	m_n = Vector3f(0, 0, 0);
-	// }
 
 public: 
 	V3f m_P; 
 	V3f m_n; 
-	Vector2f m_uv; 
+	float m_u;
+	float m_v; 
 
 };
 
@@ -181,12 +164,12 @@ public:
 /////////////////////////////////////////////////////////////////////
 class CTriangle{
 public:
-	CTriangle(){};
+	// CTriangle(){};
 
- 	CTriangle(const CPatch& _patch, V3f _v1, V3f _v2, V3f _v3 ):
- 	m_v1(_patch, _v1), m_v2(_patch, _v2), m_v3(_patch, _v3)
+ 	CTriangle(const CPatch& _patch, CLocalGeo _v1, CLocalGeo _v2, CLocalGeo _v3):
+ 	m_v1(_patch, _v1.m_P, _v1.m_u, _v1.m_v), m_v2(_patch, _v2.m_P, _v2.m_u, _v2.m_v), m_v3(_patch, _v3.m_P, _v3.m_u, _v3.m_v)
  	{
- 		m_patch = &_patch;
+ 		// m_patch = &_patch;
 
  		n_triangle++;
 
@@ -198,7 +181,7 @@ public:
 
 public:
 	CLocalGeo m_v1, m_v2, m_v3;
-	const CPatch *m_patch;
+	// const CPatch *m_patch;
 };
 
 typedef vector<vector<CLocalGeo> > PatchMesh; 
@@ -237,32 +220,20 @@ public:
 	void AdaptiveTriangulation(const CPatch& _patch, float _error, vector<CTriangle> & _geos){
 		//initialize 4 points of the patch
 		_geos.clear(); 
-		// _geos.resize(N);
 
-		// CLocalGeo v[2][2];
-		// for (int i = 0; i < 2; i++){
-		// 	for (int j=0; j< 2; j++){
+		CLocalGeo v00(_patch, _patch.m_point[0][0], 0, 0);
+		CLocalGeo v01(_patch, _patch.m_point[0][1], 0, 1);
+		CLocalGeo v10(_patch, _patch.m_point[1][0], 1, 0);
+		CLocalGeo v11(_patch, _patch.m_point[1][1], 1, 1);
 
-		// 		BezPatchInterp(_patch, i, j, v[i][j]);
-		// 		// v[i][j].print();
-		// 		// cout << i << j <<endl;
-		// 		v[i][j].m_uv = Vector2f(i, j);
-		// 		// _geos.push_back(v[i][j]);
-		// 	}
-		// }
-
-		// // CPatch* p_patch = (CPatch*) &_patch;
-		// CTriangle bl( _patch, v[0][0].m_P, v[0][1].m_P, v[1][0].m_P);
-		// CTriangle tr( _patch, v[1][1].m_P, v[0][1].m_P, v[1][0].m_P); //bl = bottom left; tr = top right;
-
-		CLocalGeo v00(_patch, _patch.m_point[0][0]);
-		CLocalGeo v01(_patch, _patch.m_point[0][1]);
-		CLocalGeo v10(_patch, _patch.m_point[1][0]);
-		CLocalGeo v11(_patch, _patch.m_point[1][1]);
+		// v11.print();
 
 
-		CTriangle bl( _patch, v00.m_P, v01.m_P, v10.m_P);
-		CTriangle tr( _patch, v10.m_P, v01.m_P, v11.m_P); //bl = bottom left; tr = top right;
+		CTriangle bl( _patch, v00, v01, v10);
+
+		
+
+		CTriangle tr( _patch, v10, v01, v11); //bl = bottom left; tr = top right;
 
 		subdivide(_patch, bl, _error, _geos);
 		subdivide(_patch, tr, _error, _geos);
@@ -272,73 +243,78 @@ public:
 
 private: 
 	bool subdivide( const CPatch& _patch, CTriangle t, float _error, vector<CTriangle> & _geos){
-		CLocalGeo v12(_patch, (t.m_v1.m_P + t.m_v2.m_P)/2.0f);
-		CLocalGeo v23(_patch, (t.m_v2.m_P + t.m_v3.m_P)/2.0f);
-		CLocalGeo v31(_patch, (t.m_v3.m_P + t.m_v1.m_P)/2.0f);
+		CLocalGeo v12(_patch, (t.m_v1.m_P + t.m_v2.m_P)/2.0f, (t.m_v1.m_u + t.m_v2.m_u)/2.0f, (t.m_v1.m_v + t.m_v2.m_v)/2.0f);
+		CLocalGeo v23(_patch, (t.m_v2.m_P + t.m_v3.m_P)/2.0f, (t.m_v2.m_u + t.m_v3.m_u)/2.0f, (t.m_v2.m_v + t.m_v3.m_v)/2.0f);
+		CLocalGeo v31(_patch, (t.m_v3.m_P + t.m_v1.m_P)/2.0f, (t.m_v3.m_u + t.m_v1.m_u)/2.0f, (t.m_v3.m_v + t.m_v1.m_v)/2.0f);
+
 		bool e12=edge_test(_patch, t.m_v1, t.m_v2, v12, _error);
 		bool e23=edge_test(_patch, t.m_v2, t.m_v3, v23, _error);
 		bool e31=edge_test(_patch, t.m_v3, t.m_v1, v31, _error);
 
-		cout<< e12 << e23 << e31 << endl;
+		t.m_v1.print();
+		t.m_v2.print();
+		v12.print();
+
+		// cout<< e12 << e23 << e31 << endl;
 		// _patch.print();
 
 		if(e12 & e23 & e31){
 			_geos.push_back(t);
 
-			t.m_v1.print();
-			t.m_v2.print();
-			t.m_v3.print();
+			// t.m_v1.print();
+			// t.m_v2.print();
+			// t.m_v3.print();
 		}
 		else if (!e12 & e23 & e31){
-			CTriangle t1(_patch, t.m_v2.m_P, t.m_v3.m_P, v12.m_P);
-			CTriangle t2(_patch, t.m_v3.m_P, t.m_v1.m_P, v12.m_P);
+			CTriangle t1(_patch, t.m_v1, v12, t.m_v3);
+			CTriangle t2(_patch, v12, t.m_v2, t.m_v3);
 			subdivide(_patch, t1, _error, _geos);
 			subdivide(_patch, t2, _error, _geos);
 		}
 		else if (e12 & !e23 & e31){
-			CTriangle t1(_patch, t.m_v1.m_P, t.m_v2.m_P, v23.m_P);
-			CTriangle t2(_patch, t.m_v3.m_P, t.m_v1.m_P, v23.m_P);
+			CTriangle t1(_patch, t.m_v2, v23, t.m_v1);
+			CTriangle t2(_patch, t.m_v3, t.m_v1, v23);
 			subdivide(_patch, t1, _error, _geos);
 			subdivide(_patch, t2, _error, _geos);
 		}
 		else if (e12 & e23 & !e31){
-			CTriangle t1(_patch, t.m_v1.m_P, t.m_v2.m_P, v31.m_P);
-			CTriangle t2(_patch, t.m_v2.m_P, t.m_v3.m_P, v31.m_P);
+			CTriangle t1(_patch, t.m_v1, t.m_v2, v31);
+			CTriangle t2(_patch, t.m_v3, v31, t.m_v2);
 			subdivide(_patch, t1, _error, _geos);
 			subdivide(_patch, t2, _error, _geos);
 		}
 		else if (!e12 & !e23 & e31){
-			CTriangle t1(_patch, t.m_v1.m_P, t.m_v3.m_P, v12.m_P);
-			CTriangle t2(_patch, t.m_v2.m_P, v12.m_P, v23.m_P);
-			CTriangle t3(_patch, t.m_v3.m_P, v23.m_P, v12.m_P);
+			CTriangle t1(_patch, t.m_v1, v12, v23);
+			CTriangle t2(_patch, t.m_v2, v23, v12);
+			CTriangle t3(_patch, t.m_v3, t.m_v1, v23);
 
 			subdivide(_patch, t1, _error, _geos);
 			subdivide(_patch, t2, _error, _geos);
 			subdivide(_patch, t3, _error, _geos);
 		}
 		else if (e12 & !e23 & !e31){
-			CTriangle t1(_patch, t.m_v1.m_P, v23.m_P, t.m_v2.m_P);
-			CTriangle t2(_patch, t.m_v1.m_P, v31.m_P, v23.m_P);
-			CTriangle t3(_patch, t.m_v3.m_P, v23.m_P, v31.m_P);
+			CTriangle t1(_patch, t.m_v2, v23, v31);
+			CTriangle t2(_patch, t.m_v3, v31, v23);
+			CTriangle t3(_patch, t.m_v1, t.m_v2, v31);
 
 			subdivide(_patch, t1, _error, _geos);
 			subdivide(_patch, t2, _error, _geos);
 			subdivide(_patch, t3, _error, _geos);
 		}
 		else if (!e12 & e23 & !e31){
-			CTriangle t1(_patch, t.m_v1.m_P, v31.m_P, v12.m_P);
-			CTriangle t2(_patch, t.m_v2.m_P, v12.m_P, v31.m_P);
-			CTriangle t3(_patch, t.m_v3.m_P, t.m_v2.m_P, v31.m_P);
+			CTriangle t1(_patch, t.m_v3, v31, v12);
+			CTriangle t2(_patch, t.m_v1, v12, v31);
+			CTriangle t3(_patch, t.m_v2, t.m_v3, v12);
 
 			subdivide(_patch, t1, _error, _geos);
 			subdivide(_patch, t2, _error, _geos);
 			subdivide(_patch, t3, _error, _geos);
 		}
 		else if (!e12 & !e23 & !e31){
-			CTriangle t1(_patch, t.m_v1.m_P, v31.m_P, v12.m_P);
-			CTriangle t2(_patch, t.m_v2.m_P, v12.m_P, v23.m_P);
-			CTriangle t3(_patch, t.m_v3.m_P, v23.m_P, v31.m_P);
-			CTriangle t4(_patch, v12.m_P, v31.m_P, v23.m_P);
+			CTriangle t1(_patch, t.m_v1, v12, v31);
+			CTriangle t2(_patch, t.m_v2, v23, v12);
+			CTriangle t3(_patch, t.m_v3, v31, v23);
+			CTriangle t4(_patch, v12, v23, v31);
 
 			subdivide(_patch, t1, _error, _geos);
 			subdivide(_patch, t2, _error, _geos);
@@ -351,9 +327,15 @@ private:
 	bool edge_test(const CPatch& _patch, CLocalGeo _v1, CLocalGeo _v2, CLocalGeo & _v12, float _error){
 		CLocalGeo mid_point(_patch, (_v1.m_P+_v2.m_P)/2.0f);
 
-		// cout << mid_point.m_uv<<endl;
+		_v12.m_u = (_v1.m_u + _v2.m_u)/2.0f;
+		_v12.m_v = (_v1.m_v + _v2.m_v)/2.0f;
 
-		BezPatchInterp(_patch, mid_point.m_uv(0), mid_point.m_uv(1), _v12);
+
+		_v1.print();
+		BezPatchInterp(_patch, _v12.m_u, _v12.m_v, _v12);
+		// BezPatchInterp(_patch, mid_point.m_uv(0), mid_point.m_uv(1), _v12);
+
+
 
 		float error=(_v12.m_P - mid_point.m_P).norm();
 		// _v12.print();
@@ -651,8 +633,7 @@ void myDisplay() {
 	int dy[] = {0, 1, 1, 0};
 	glColor3f(0.0f, 0.0f, 1.0f);
 
-	switch (type){
-		case uniform:
+if (type == uniform){
 			FOR_u (k, g_meshes.size()) {
 				PatchMesh mesh = g_meshes[k];
 				FOR (i, mesh.size()-1) {
@@ -671,7 +652,9 @@ void myDisplay() {
 					}
 				}
 			}
-		case adaptive:
+			// cout<< "type: " << type<< endl;
+		}
+if(type == adaptive){
 			// cout<< type <<endl;
 			for(int k =0; k < g_triangle_meshes.size(); k++){
 				// cout<<k << endl;
@@ -722,15 +705,18 @@ void myFrameMove() {
 
 void ProcessGeometry(const vector<CPatch>& _patches, Ttype type, const float parameter) {
 	CBezier* bezier = new CBezier(); 
+
+
 	
-	switch (type) {
-		case uniform:
+if (type == uniform){
 			FOR (k, (int)_patches.size()) {
 				PatchMesh mesh; 
 				bezier->UniformTessellate(_patches[k], parameter, mesh);
 				g_meshes.push_back(mesh);
 			}
-		case adaptive:
+			cout<< "type: uniform " << type<< endl;
+}
+if (type == adaptive){
 			FOR (k, (int)_patches.size()) {
 				// cout<<k<<endl;
 				PatchTriangle T; 
@@ -759,6 +745,7 @@ int main(int argc, char *argv[]) {
   glutInit(&argc, argv);
 
   float parameter = 0.1f;
+  type = uniform;
   string filename = "teapot.bez";
 
   if (argc > 1){
@@ -780,6 +767,8 @@ int main(int argc, char *argv[]) {
   		cout<< "type:\tUniform Tessellation"<<endl;
   	}
   }
+
+  cout<< type << endl;
 
   
 
