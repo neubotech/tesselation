@@ -171,12 +171,12 @@ public:
  	{
  		// m_patch = &_patch;
 
- 		n_triangle++;
+ 		// n_triangle++;
 
- 		cout<<"triangle#: "<< n_triangle << endl;
- 		m_v1.print();
- 		m_v2.print();
- 		m_v3.print();
+ 		// cout<<"triangle#: "<< n_triangle << endl;
+ 		// m_v1.print();
+ 		// m_v2.print();
+ 		// m_v3.print();
  	}
 
 public:
@@ -235,8 +235,12 @@ public:
 
 		CTriangle tr( _patch, v10, v01, v11); //bl = bottom left; tr = top right;
 
+
+
 		subdivide(_patch, bl, _error, _geos);
 		subdivide(_patch, tr, _error, _geos);
+
+		cout<<"test"<<endl;
 
 
 	}
@@ -251,19 +255,21 @@ private:
 		bool e23=edge_test(_patch, t.m_v2, t.m_v3, v23, _error);
 		bool e31=edge_test(_patch, t.m_v3, t.m_v1, v31, _error);
 
-		t.m_v1.print();
-		t.m_v2.print();
-		v12.print();
+		// t.m_v1.print();
+		// t.m_v2.print();
+		// v12.print();
 
-		// cout<< e12 << e23 << e31 << endl;
+		cout<< e12 << e23 << e31 << endl;
+
+			t.m_v1.print();
+			t.m_v2.print();
+			t.m_v3.print();
 		// _patch.print();
 
 		if(e12 & e23 & e31){
 			_geos.push_back(t);
 
-			// t.m_v1.print();
-			// t.m_v2.print();
-			// t.m_v3.print();
+
 		}
 		else if (!e12 & e23 & e31){
 			CTriangle t1(_patch, t.m_v1, v12, t.m_v3);
@@ -331,7 +337,7 @@ private:
 		_v12.m_v = (_v1.m_v + _v2.m_v)/2.0f;
 
 
-		_v1.print();
+		// _v1.print();
 		BezPatchInterp(_patch, _v12.m_u, _v12.m_v, _v12);
 		// BezPatchInterp(_patch, mid_point.m_uv(0), mid_point.m_uv(1), _v12);
 
@@ -714,21 +720,19 @@ if (type == uniform){
 				bezier->UniformTessellate(_patches[k], parameter, mesh);
 				g_meshes.push_back(mesh);
 			}
-			cout<< "type: uniform " << type<< endl;
+			// cout<< "type: uniform " << type<< endl;
 }
 if (type == adaptive){
 			FOR (k, (int)_patches.size()) {
-				// cout<<k<<endl;
+				cout<<"K is: " << k<<endl;
 				PatchTriangle T; 
 				bezier->AdaptiveTriangulation(_patches[k], parameter, T);
 				// cout << vertexes.size()<<endl;
 				// vertexes[0].print();
-				if (true){
-					g_triangle_meshes.push_back(T);
-				}
-				else{
-					cout<<"reach maximum triangles per patch for patch "<< k <<endl;
-				}
+
+				g_triangle_meshes.push_back(T);
+
+
 			}
 	}
 
