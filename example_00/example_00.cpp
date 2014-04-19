@@ -99,7 +99,7 @@ public:
 	~CCurve() {
 		m_points.clear();
 	}
-	
+
 	CCurve(vector<V3f>& _points) {
 		if (_points.size() == 4) 
 			m_points = _points; 
@@ -243,28 +243,12 @@ public:
 		subdivide(_patch, bl, _e, _geos, 0);
 		subdivide(_patch, tr, _e, _geos, 0);
 
-		cout<<"test"<<endl;
+		// cout<<"test"<<endl;
 
 
 	}
 
 private: 
-<<<<<<< HEAD
-	bool subdivide( const CPatch& _patch, CTriangle t, float _error, vector<CTriangle> & _geos){
-		CLocalGeo v12(_patch, (t.m_v1.m_P + t.m_v2.m_P)/2.0f, (t.m_v1.m_u + t.m_v2.m_u)/2.0f, (t.m_v1.m_v + t.m_v2.m_v)/2.0f);
-		CLocalGeo v23(_patch, (t.m_v2.m_P + t.m_v3.m_P)/2.0f, (t.m_v2.m_u + t.m_v3.m_u)/2.0f, (t.m_v2.m_v + t.m_v3.m_v)/2.0f);
-		CLocalGeo v31(_patch, (t.m_v3.m_P + t.m_v1.m_P)/2.0f, (t.m_v3.m_u + t.m_v1.m_u)/2.0f, (t.m_v3.m_v + t.m_v1.m_v)/2.0f);
-
-		bool e12=edge_test(_patch, t.m_v1, t.m_v2, v12, _error);
-		bool e23=edge_test(_patch, t.m_v2, t.m_v3, v23, _error);
-		bool e31=edge_test(_patch, t.m_v3, t.m_v1, v31, _error);
-
-		cout<< e12 << e23 << e31 << endl;
-
-			// t.m_v1.print();
-			// t.m_v2.print();
-			// t.m_v3.print();
-=======
 	void subdivide( const CPatch& _patch, CTriangle t, float _e, vector<CTriangle> & _geos, int _depth){
 		//printf("depth = (%d)\n", _depth);
 	/*	if (_depth >= 273) {
@@ -295,7 +279,6 @@ private:
 		/*	t.m_v1.print();
 			t.m_v2.print();
 			t.m_v3.print();*/
->>>>>>> FETCH_HEAD
 		// _patch.print();
 
 		//if (_depth == 10) {
@@ -311,30 +294,26 @@ private:
 			_geos.push_back(t);
 			return; 
 		}
-<<<<<<< HEAD
-		 if (!e12 & e23 & e31){
-=======
 
 		else if (!e12 & e23 & e31){
->>>>>>> FETCH_HEAD
 			CTriangle t1(_patch, t.m_v1, v12, t.m_v3);
 			CTriangle t2(_patch, v12, t.m_v2, t.m_v3);
 			subdivide(_patch, t1, _e, _geos, _depth+1);
 			subdivide(_patch, t2, _e, _geos, _depth+1);
 		}
-		 if (e12 & !e23 & e31){
+		else if (e12 & !e23 & e31){
 			CTriangle t1(_patch, t.m_v2, v23, t.m_v1);
 			CTriangle t2(_patch, t.m_v3, t.m_v1, v23);
 			subdivide(_patch, t1, _e, _geos, _depth+1);
 			subdivide(_patch, t2, _e, _geos, _depth+1);
 		}
-		 if (e12 & e23 & !e31){
+		else if (e12 & e23 & !e31){
 			CTriangle t1(_patch, t.m_v1, t.m_v2, v31);
 			CTriangle t2(_patch, t.m_v3, v31, t.m_v2);
 			subdivide(_patch, t1, _e, _geos, _depth+1);
 			subdivide(_patch, t2, _e, _geos, _depth+1);
 		}
-		 if (!e12 & !e23 & e31){
+		else if (!e12 & !e23 & e31){
 			CTriangle t1(_patch, t.m_v1, v12, v23);
 			CTriangle t2(_patch, t.m_v2, v23, v12);
 			CTriangle t3(_patch, t.m_v3, t.m_v1, v23);
@@ -343,7 +322,7 @@ private:
 			subdivide(_patch, t2, _e, _geos, _depth+1);
 			subdivide(_patch, t3, _e, _geos, _depth+1);
 		}
-		 if (e12 & !e23 & !e31){
+		else if (e12 & !e23 & !e31){
 			CTriangle t1(_patch, t.m_v2, v23, v31);
 			CTriangle t2(_patch, t.m_v3, v31, v23);
 			CTriangle t3(_patch, t.m_v1, t.m_v2, v31);
@@ -352,7 +331,7 @@ private:
 			subdivide(_patch, t2, _e, _geos, _depth+1);
 			subdivide(_patch, t3, _e, _geos, _depth+1);
 		}
-		 if (!e12 & e23 & !e31){
+		else if (!e12 & e23 & !e31){
 			CTriangle t1(_patch, t.m_v3, v31, v12);
 			CTriangle t2(_patch, t.m_v1, v12, v31);
 			CTriangle t3(_patch, t.m_v2, t.m_v3, v12);
@@ -361,7 +340,7 @@ private:
 			subdivide(_patch, t2, _e, _geos, _depth+1);
 			subdivide(_patch, t3, _e, _geos, _depth+1);
 		}
-		 if (!e12 & !e23 & !e31){
+		else if (!e12 & !e23 & !e31){
 			CTriangle t1(_patch, t.m_v1, v12, v31);
 			CTriangle t2(_patch, t.m_v2, v23, v12);
 			CTriangle t3(_patch, t.m_v3, v31, v23);
@@ -375,16 +354,12 @@ private:
 	}
 
 	//need to test out
-<<<<<<< HEAD
-	bool edge_test(const CPatch& _patch, CLocalGeo _v1, CLocalGeo _v2, CLocalGeo & _v12, float _error){
-=======
 	bool edge_test(const CPatch& _patch, CLocalGeo _v1, CLocalGeo _v2, CLocalGeo & _v12, float _e){
 		CLocalGeo mid_point(_patch, (_v1.m_P+_v2.m_P)/2.0f);
 
->>>>>>> FETCH_HEAD
 		_v12.m_u = (_v1.m_u + _v2.m_u)/2.0f;
 		_v12.m_v = (_v1.m_v + _v2.m_v)/2.0f;
-		CLocalGeo mid_point(_patch, (_v1.m_P+_v2.m_P)/2.0f, _v12.m_u, _v12.m_v);
+
 
 		// _v1.print();
 		BezPatchInterp(_patch, _v12.m_u, _v12.m_v, _v12);
@@ -393,15 +368,10 @@ private:
 
 
 		float error=(_v12.m_P - mid_point.m_P).norm();
-		_v12.print();
+		// _v12.print();
 		// mid_point.print();
-<<<<<<< HEAD
-		cout << error << endl << endl;
-		return error < _error;
-=======
 		// cout << error << endl << endl;
 		return error < _e;
->>>>>>> FETCH_HEAD
 	}
 
 
@@ -653,7 +623,7 @@ void arrowKeyPressed(int key, int x, int y) {
 	default:
 		break;
 	}
-		
+
 }
 
 
@@ -671,7 +641,7 @@ void myDisplay() {
   //gluLookAt( 4,2,0, 0,0,0, 0,1,0);
 
 	glPushMatrix();		
-	
+
 	glTranslatef(g_transX, g_transY, 0.0f);
 	glRotatef(g_rotateY, 1.0f, 0.0f, 0.0f);
 	glRotatef(g_rotateX, 0.0f, 1.0f, 0.0f);
@@ -764,7 +734,7 @@ void myFrameMove() {
 
 void ProcessGeometry(const vector<CPatch>& _patches, Ttype type, const float parameter) {
 	CBezier* bezier = new CBezier(); 
-	
+
 	if (type == uniform){
 		FOR (k, (int)_patches.size()) {
 			PatchMesh mesh; 
@@ -788,6 +758,279 @@ void ProcessGeometry(const vector<CPatch>& _patches, Ttype type, const float par
 	DELETE_OBJECT(bezier);
 }
 
+
+
+//////////////////////////////////////////////////////////////////
+//Obj file read/write
+////////////////////////////////////////////////////////////////////
+class CObj{
+public:
+	CObj(){}
+
+	CObj(vector<CLocalGeo> _vertex){
+		m_vertex = _vertex;
+	}
+
+public:
+	// bool read(string file){
+	// 	ifstream fin(file.c_str());
+
+	//     if(!fin.is_open()){
+	// 	  printf("failed to open file (%s)\n", file.c_str()); 
+	//       exit(-1);
+	//     }
+	//     else{
+	//       vector<string> splitline;
+	//       string line, buf;
+
+	//       getline(fin, line);
+	//       int num_patch = atoi(line.c_str());
+	// 	  printf("read (%d) patches from (%s)\n", num_patch, file.c_str());
+	// 	  patches.resize(num_patch);
+
+	//         for(int k = 0; k < num_patch; k++){
+	//           //patches[k] = CPatch();
+	// 		  CPatch patch; 
+	//           for(int i=0; i< 4; i++){
+	//             getline(fin, line);
+	//             stringstream ss(line);
+	//             // cout << k << "\t" << line << endl;
+
+	//             while (ss >> buf){
+	//               splitline.push_back(buf);
+	//             }
+
+	//             for(int j=0; j < 4; j++){
+	//                 patch.assign(i, j,  Vector3f(
+	//                   atof(splitline[0+j*3].c_str()), 
+	//                   atof(splitline[1+j*3].c_str()), 
+	//                   atof(splitline[2+j*3].c_str())) );
+	//             }
+
+	//             splitline.clear();
+	//           }
+	//            getline(fin, line);
+	// 		   patches[k] = patch; 
+	//         }
+
+	//       fin.close();
+	//     }
+	// }
+
+	bool write(string file){
+ 		ofstream fout(file.c_str());
+
+	    if(!fout.is_open()){
+		  printf("failed to open file for output (%s)\n", file.c_str()); 
+	      exit(-1);
+	    }
+	    else{	
+
+	    	for (int i = 0; i < m_vertex.size(); i++){
+	    		fout << "v " << m_vertex.at(i).m_P.x()
+	    			<< " " << m_vertex.at(i).m_P.y()
+	    			<< " " << m_vertex.at(i).m_P.z() << endl;
+	    	}
+
+	    	fout << "#vertexes "<< m_vertex.size()<< endl;
+
+	    	for (int i = 0; i < m_vertex.size(); i++){
+	    		fout << "v " << m_vertex.at(i).m_n.x()
+	    			<< " " << m_vertex.at(i).m_n.y()
+	    			<< " " << m_vertex.at(i).m_n.z() << endl;
+	    	}
+
+	    	fout << "#normals "<< m_vertex.size()<< endl;
+
+	    	fout.close();
+	    	return true;
+	    }
+
+	}
+
+
+	bool write_uniform(string file, vector<PatchMesh> _mesh){
+		 ofstream fout(file.c_str());
+
+	    if(!fout.is_open()){
+		  printf("failed to open file for output (%s)\n", file.c_str()); 
+	      exit(-1);
+	    }
+	    else{
+
+	    	int dx[] = {0, 0, 1, 1};
+			int dy[] = {0, 1, 1, 0};
+
+	    	fout << "#Writing rectangle from Uniform Tesselation" << endl;
+
+	    	int N;
+	    	N = 0;
+	    	FOR_u (k, _mesh.size()) {
+				PatchMesh mesh = _mesh[k];
+				FOR_u (i, mesh.size()-1) {
+					FOR_u (j, mesh[i].size()-1) {
+						FOR (l, 4) {
+							int w = i + dx[l];
+							int h = j + dy[l];
+							V3f P = mesh[w][h].m_P;
+
+							fout << "v " << P.x()
+		    					<< " " <<  P.y()
+		    					<< " " <<  P.z() << endl;
+		    				N++;
+						}
+					}
+				}
+			}
+		    fout << "#vertexes "<< N << endl << endl;
+
+		    N = 0;
+		    FOR_u (k, _mesh.size()) {
+				PatchMesh mesh = _mesh[k];
+				FOR_u (i, mesh.size()-1) {
+					FOR_u (j, mesh[i].size()-1) {
+						FOR (l, 4) {
+							int w = i + dx[l];
+							int h = j + dy[l];
+							V3f n = mesh[w][h].m_n;
+
+							fout << "vn " << n.x()
+		    					<< " " <<  n.y()
+		    					<< " " <<  n.z() << endl;
+		    				N++;
+						}
+					}
+				}
+			}
+
+		    fout << "#normals "<< N << endl << endl;
+
+		    N = 0;
+		    int F = 0;
+		    FOR_u (k, _mesh.size()) {
+				PatchMesh mesh = _mesh[k];
+				FOR_u (i, mesh.size()-1) {
+					FOR_u (j, mesh[i].size()-1) {
+						fout << "f ";
+						FOR (l, 4) {
+							N++;
+
+							fout << N << "//"<< N << " ";
+		    				
+						}
+						fout << endl;
+						F++;
+					}
+				}
+			}
+			fout << "#faces "<< F << endl;
+
+	    	fout.close();
+	    	return true;
+	    }
+	}
+
+	bool write_adaptive(string file, vector<PatchTriangle> _triangle_meshes){
+		ofstream fout(file.c_str());
+
+	    if(!fout.is_open()){
+		  printf("failed to open file for output (%s)\n", file.c_str()); 
+	      exit(-1);
+	    }
+	    else{
+	    	int N = 0;
+
+			for (int k =0; k < (int)_triangle_meshes.size(); k++){
+				// cout<<k << endl;
+				PatchTriangle Triangles = _triangle_meshes[k];
+				for (int s = 0; s < (int)Triangles.size(); s++){
+					
+					V3f P, n;
+					//cout <<n.x() << " " << n.y() << " " << n.z() << endl; 
+					P = Triangles[s].m_v1.m_P;
+
+					fout << "v " << P.x()
+    					<< " " <<  P.y()
+    					<< " " <<  P.z() << endl;
+
+					P = Triangles[s].m_v2.m_P;
+				
+					fout << "v " << P.x()
+    					<< " " <<  P.y()
+    					<< " " <<  P.z() << endl;
+
+					P = Triangles[s].m_v3.m_P;
+					
+					fout << "v " << P.x()
+    					<< " " <<  P.y()
+    					<< " " <<  P.z() << endl;
+    				N+=3;
+				}
+			}
+			fout << "#vertexes "<< N << endl << endl;
+
+			N = 0;
+			for (int k =0; k < (int)_triangle_meshes.size(); k++){
+				// cout<<k << endl;
+				PatchTriangle Triangles = _triangle_meshes[k];
+				for (int s = 0; s < (int)Triangles.size(); s++){
+					
+					V3f P, n;
+					//cout <<n.x() << " " << n.y() << " " << n.z() << endl; 
+					P = Triangles[s].m_v1.m_P;
+
+					fout << "vn " << P.x()
+    					<< " " <<  P.y()
+    					<< " " <<  P.z() << endl;
+
+					P = Triangles[s].m_v2.m_P;
+				
+					fout << "vn " << P.x()
+    					<< " " <<  P.y()
+    					<< " " <<  P.z() << endl;
+
+					P = Triangles[s].m_v3.m_P;
+					
+					fout << "vn " << P.x()
+    					<< " " <<  P.y()
+    					<< " " <<  P.z() << endl;
+    				N+=3;
+				}
+			}
+			fout << "#normals "<< N << endl << endl;
+
+		    N = 0;
+		    int F = 0;
+		    FOR_u (k, _triangle_meshes.size()) {
+				PatchTriangle triangle = _triangle_meshes[k];
+				FOR_u (i, _triangle_meshes.size()-1) {
+					FOR_u (j, _triangle_meshes[i].size()-1) {
+						fout << "f ";
+						FOR (l, 3) {
+							N++;
+
+							fout << N << "//"<< N << " ";
+		    				
+						}
+						fout << endl;
+						F++;
+					}
+				}
+			}
+			fout << "#faces "<< F << endl;
+
+	    	fout.close();
+	    	return true;
+		}	
+	}
+
+	virtual bool append(vector<CLocalGeo> _vertex){
+		m_vertex.insert(m_vertex.begin(),  _vertex.begin(), _vertex.end());
+	}
+
+public:
+	vector<CLocalGeo> m_vertex;
+};
 
 
 //****************************************************
@@ -824,6 +1067,14 @@ int main(int argc, char *argv[]) {
 
   g_patches = parseBez(filename);
   ProcessGeometry(g_patches, type, parameter);
+
+  CObj obj;
+
+  if(type == uniform)
+  	obj.write_uniform("output.obj", g_meshes);
+  if(type == adaptive)
+  	obj.write_adaptive("output.obj", g_triangle_meshes);
+
   //This tells glut to use a double-buffered window with red, green, and blue channels 
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
 
